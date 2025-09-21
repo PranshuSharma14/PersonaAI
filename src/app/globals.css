@@ -79,7 +79,7 @@
   --sidebar-primary: oklch(0.205 0 0);
   --sidebar-primary-foreground: oklch(0.985 0 0);
 
-  /*Sidebar activee item background color*/
+  /*Sidebar active item background color*/
   --sidebar-accent: oklch(0.34 0.0601 171.21);
 
  /*Sidebar active item text color */ 
