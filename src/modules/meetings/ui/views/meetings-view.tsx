@@ -1,4 +1,4 @@
-"use Client"
+"use client"
 
 import { ErrorState } from "@/components/error-state";
 import { LoadingState } from "@/components/loading-state";
@@ -10,7 +10,7 @@ export const Meetingsview =() =>{
     const {data} = useSuspenseQuery(trpc.meetings.getMany.queryOptions({}));
 
     return (
-        <div>
+        <div className="overflow-x-scroll">
             {JSON.stringify(data)}
         </div>
     )
