@@ -38,6 +38,11 @@ import { cn } from "@/lib/utils";
     const [open,setOpen] = useState(false);
     const selectedOption = options.find((option) => option.value === value);
 
+    const handleOpenChange = (open:boolean)=>{
+        onSearch?.("");
+        setOpen(open)
+    }
+
     return(
         <>
             <Button onClick={()=> setOpen(true)} type="button" variant="outline" className={cn("h-9 justify-between font-normal px-1", !selectedOption && "text-muted-foreground", className)}>
@@ -47,7 +52,7 @@ import { cn } from "@/lib/utils";
                 <ChevronsUpDownIcon />
             </Button> 
 
-            <CommandResponsiveDialog open={open} onOpenChange={setOpen} shouldFilter={!onSearch}>
+            <CommandResponsiveDialog open={open} onOpenChange={handleOpenChange} shouldFilter={true}>
                 <CommandInput placeholder="Search..." onValueChange={onSearch}/>
                 <CommandList>
                     <CommandEmpty>
