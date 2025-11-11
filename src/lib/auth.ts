@@ -27,4 +27,12 @@ export const auth = betterAuth({
             ...schema,
         },
     }),
+
+
+    trustedOrigins: [
+    "http://localhost:3000",
+    "https://cinematically-unanemic-manuel.ngrok-free.dev", // ✅ your ngrok domain
+  ],
+
+  
 });
