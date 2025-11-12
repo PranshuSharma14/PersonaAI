@@ -1,7 +1,6 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import humanizeDuration from "humanize-duration"
 import { GeneratedAvatar } from "@/components/generated-avatar"
 import {
     CircleCheckIcon,
@@ -14,19 +13,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { MeetingGetMany } from "../../types"
 import { format } from "date-fns";
-import { cn } from "@/lib/utils"
+import { cn, formatDuration } from "@/lib/utils"
 
 // This type is used to define the shape of our data.
 // You can use a Zod schema here if you want.
 
 
-function formatDuration(seconds:number) {
-    return humanizeDuration(seconds*1000,{
-        largest:1,
-        round:true,
-        units:["h","m","s"],
-    });
-};
+
 
 const statusIconMap = {
     upcoming : ClockArrowUpIcon,
