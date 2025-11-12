@@ -97,9 +97,17 @@ export const meetingsProcessing = inngest.createFunction(
     })
 
     const { output } = await step.run("summarize-transcript", async () => {
+
+    const transcriptText = transcriptWithSpeakers
+    .map(
+      (item) =>
+        `${item.user?.name || "Unknown"}: ${item.text || ""}`
+    )
+    .join("\n");
+
     return await summarizer.run(
-      "Summarize the following transcript:" +
-        JSON.stringify(transcriptWithSpeakers)
+      "Summarize the following transcript:\n" +
+        transcriptText
       );
     });
 
