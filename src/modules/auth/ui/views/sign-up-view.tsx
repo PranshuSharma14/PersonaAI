@@ -23,8 +23,8 @@ const formSchema = z.object({
 })
 
 .refine((data)=> data.password === data.confirmPassword, {
-    message: "Password don't match",
-    path: ["confirmPassword",]
+    message: "Password don&apos;t match",
+    path: ["confirmPassword"]
 })
 
 export const SignUpView = ()=>{
@@ -170,8 +170,8 @@ export const SignUpView = ()=>{
                                         <FormLabel>Confirm Password</FormLabel>
                                         <FormControl>
                                             <Input 
-                                                type="email" 
-                                                placeholder="abc@gmail.com"
+                                                type="password" 
+                                                placeholder="********"
                                                 {...field}
                                             />
                                         </FormControl>

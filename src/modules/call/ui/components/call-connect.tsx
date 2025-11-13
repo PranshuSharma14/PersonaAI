@@ -1,6 +1,5 @@
 "use client"
 
-import { ProcessingState } from "@/modules/meetings/ui/components/processing-state";
 import { useTRPC } from "@/trpc/client";
 import {Call,
     CallingState,
@@ -46,7 +45,10 @@ export const CallConnect = ({
                 name:userName,
                 image:userImage,
             },
-            tokenProvider : generateToken,
+            tokenProvider: async () => {
+                const token = await generateToken();
+                return token; // make sure the token is a string
+            },
         });
 
         setClient(_client);
@@ -78,7 +80,7 @@ export const CallConnect = ({
     if(!client || !call){
         return (
             <div className="flex h-screen items-center justify-center bg-radial from-sidebar-accent to-sidebar">
-                <LoaderIcon className="size-6 animate-spin text-white"/>
+                <LoaderIcon className="w-6 h-6 animate-spin text-white"/>
             </div> 
         );
     }

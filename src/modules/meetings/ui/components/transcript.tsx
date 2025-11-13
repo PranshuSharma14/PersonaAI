@@ -1,8 +1,7 @@
 import { AvatarImage } from "@/components/ui/avatar";
 import { generateAvatarUri } from "@/lib/avatar";
 import { useTRPC } from "@/trpc/client";
-import { Avatar } from "@radix-ui/react-avatar";
-import { Item } from "@radix-ui/react-dropdown-menu";
+import { Avatar } from "@radix-ui/react-avatar";    
 import { ScrollArea } from "@radix-ui/react-scroll-area";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -48,7 +47,7 @@ export const Transcript = ({meetingId} : Props) => {
                         className="flex flex-col gap-y-2 hover:bg-muted p-4 rounded-md border"
                         >
                         <div className="flex gap-x-2 items-center">
-                            <Avatar className="size-6">
+                            <Avatar className="w-6 h-6">
                             <AvatarImage
                                 alt="User avatar"
                                 src={item.user.image ?? generateAvatarUri({ seed: item.user.name, variant: "initials" })}
