@@ -11,7 +11,6 @@ import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { generateAvatarUri } from "@/lib/avatar";
 import { streamChat } from "@/lib/stream-chat";
-import { role } from "@stream-io/video-react-sdk";
 
 const openaiClient = new OpenAI({
     apiKey : process.env.OPENAI_API_KEY,
