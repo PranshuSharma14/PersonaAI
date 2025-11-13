@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { agents } from "@/db/schema";
-import { createTRPCRouter , protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter , protectedProcedure , premiumProcedure } from "@/trpc/init";
 import { agentInsertSchema, agentsUpdateSchema } from "../schemas";
 import { z } from "zod";
 import { and, count, desc, eq, getTableColumns, ilike, sql} from "drizzle-orm";
@@ -129,7 +129,7 @@ export const agentsRouter = createTRPCRouter({
         //throw new TRPCError({code : "BAD_REQUEST"});
     }),
 
-    create: protectedProcedure
+    create: premiumProcedure("agents")
     .input(agentInsertSchema)
     .mutation(async({input,ctx}) =>{
         const [createdAgent] = await db
