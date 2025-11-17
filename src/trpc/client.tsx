@@ -42,8 +42,20 @@ export function TRPCReactProvider(
     createTRPCClient<AppRouter>({
       links: [
         httpBatchLink({
-          // transformer: superjson, <-- if you use a data transformer
           url: getUrl(),
+          // Add error handling for fetch
+          fetch: async (input, init) => {
+            try {
+              const response = await fetch(input, init);
+              if (!response.ok) {
+                console.error(`tRPC request failed: ${response.status} ${response.statusText}`);
+              }
+              return response;
+            } catch (error) {
+              console.error('tRPC fetch error:', error);
+              throw error;
+            }
+          },
         }),
       ],
     }),

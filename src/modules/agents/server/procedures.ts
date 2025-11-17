@@ -62,7 +62,6 @@ export const agentsRouter = createTRPCRouter({
         const [existingAgent]=await db
         .select({
             ...getTableColumns(agents),
-            meetingCount : db.$count(meetings, eq(agents.id,meetings.agentId)),
         })
         .from(agents)
         .where(
@@ -73,13 +72,29 @@ export const agentsRouter = createTRPCRouter({
         );
 
         if(!existingAgent){
-            throw new TRPCError({code: "NOT_FOUND", message: "Agent not fount"})
+            throw new TRPCError({code: "NOT_FOUND", message: "Agent not found"})
         }
+
+        // Get meeting count separately for better reliability
+        const [meetingCountResult] = await db
+            .select({ count: count() })
+            .from(meetings)
+            .where(
+                and(
+                    eq(meetings.agentId, input.id),
+                    eq(meetings.userId, ctx.auth.user.id)
+                )
+            );
+
+        const meetingCount = meetingCountResult?.count || 0;
 
         //await new Promise((resolve) => setTimeout(resolve,5000));
         //throw new TRPCError({code : "BAD_REQUEST"});
 
-        return existingAgent;
+        return {
+            ...existingAgent,
+            meetingCount
+        };
     }),
 
     getMany : protectedProcedure
@@ -91,10 +106,11 @@ export const agentsRouter = createTRPCRouter({
       
     .query(async({ctx,input})=>{
         const {search, page, pageSize} = input;
-        const data=await db
+        
+        // Get agents first
+        const agentsData = await db
         .select({
             ...getTableColumns(agents),
-            meetingCount : db.$count(meetings, eq(agents.id,meetings.agentId)),
         })
         .from(agents)
         .where(
@@ -105,7 +121,27 @@ export const agentsRouter = createTRPCRouter({
         )
         .orderBy(desc(agents.createdAt),desc(agents.id))
         .limit(pageSize)
-        .offset((page-1)*pageSize)
+        .offset((page-1)*pageSize);
+
+        // Get meeting counts for each agent
+        const agentsWithCounts = await Promise.all(
+            agentsData.map(async (agent) => {
+                const [meetingCountResult] = await db
+                    .select({ count: count() })
+                    .from(meetings)
+                    .where(
+                        and(
+                            eq(meetings.agentId, agent.id),
+                            eq(meetings.userId, ctx.auth.user.id)
+                        )
+                    );
+                
+                return {
+                    ...agent,
+                    meetingCount: meetingCountResult?.count || 0
+                };
+            })
+        );
 
      const [total]= await db
      .select({count:count() })
@@ -120,7 +156,7 @@ export const agentsRouter = createTRPCRouter({
      const totalPages=Math.ceil(total.count / pageSize)
 
      return{
-        items:data,
+        items:agentsWithCounts,
         total:total.count,
         totalPages
      };

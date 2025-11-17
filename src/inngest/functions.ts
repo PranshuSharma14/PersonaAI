@@ -31,7 +31,7 @@ Example:
 - Mention of integration with Z
   
   ` . trim(),
-  model: openai({model : "gpt-4o" , apiKey:process.env.OPENAI_API_KEY})
+  model: openai({model : "gpt-5-nano" , apiKey:process.env.OPENAI_API_KEY})
 })
 
 export const meetingsProcessing = inngest.createFunction(
@@ -96,30 +96,48 @@ export const meetingsProcessing = inngest.createFunction(
         })
     })
 
-    const { output } = await step.run("summarize-transcript", async () => {
+    const summarizationResult = await step.run("summarize-transcript", async () => {
+      const transcriptText = transcriptWithSpeakers
+        .map((item) => `${item.user?.name || "Unknown"}: ${item.text || ""}`)
+        .join("\n");
 
-    const transcriptText = transcriptWithSpeakers
-    .map(
-      (item) =>
-        `${item.user?.name || "Unknown"}: ${item.text || ""}`
-    )
-    .join("\n");
-
-    return await summarizer.run(
-      "Summarize the following transcript:\n" +
-        transcriptText
+      return await summarizer.run(
+        "Summarize the following transcript:\n" + transcriptText
       );
     });
 
+    const extractSummary = (res: any): string | null => {
+      if (!res) return null;
+      const candidate = res.output ?? res;
+      
+      if (Array.isArray(candidate) && candidate.length > 0) {
+        const first = candidate[0];
+        if (typeof first === "string") return first;
+        if (first?.content) return first.content;
+        if (first?.text) return first.text;
+      }
+      
+      if (typeof candidate === "string") return candidate;
+      if (candidate?.content) return candidate.content;
+      if (candidate?.text) return candidate.text;
+      
+      return null;
+    };
 
-    await step.run("save-summary" , async()=>{
+    const summaryText = extractSummary(summarizationResult);
+    
+    if (!summaryText) {
+      throw new Error("Failed to extract summary from summarizer output");
+    }
+
+    await step.run("save-summary", async () => {
       await db
         .update(meetings)
         .set({
-          summary : (output[0] as TextMessage).content as string,
-          status:"completed",
+          summary: summaryText,
+          status: "completed",
         })
-        .where(eq(meetings.id , event.data.meetingId))
-    })
+        .where(eq(meetings.id, event.data.meetingId));
+    });
   },
 );

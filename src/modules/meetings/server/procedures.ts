@@ -27,6 +27,8 @@ export const meetingsRouter = createTRPCRouter({
     }),
 
     getTranscript: protectedProcedure.input(z.object({id: z.string()})).query(async({ctx, input}) => {
+        console.log(`[TRANSCRIPT] Fetching transcript for meeting: ${input.id}`);
+        
         const [existingMeeting] = await db
         .select()
         .from(meetings)
@@ -40,13 +42,25 @@ export const meetingsRouter = createTRPCRouter({
             throw new TRPCError({code: "NOT_FOUND", message: "Meeting not found"});
         }
         if(!existingMeeting.transcriptURL){
+            console.log(`[TRANSCRIPT] No transcript URL for meeting: ${input.id}`);
             throw new TRPCError({code: "BAD_REQUEST", message: "Transcript not available"});
         }
 
+        console.log(`[TRANSCRIPT] Fetching from URL: ${existingMeeting.transcriptURL}`);
+        
         const transcript = await fetch(existingMeeting.transcriptURL)
-                .then((res) => res.text())
-                .then((text) => JSONL.parse<StreamTranscriptItem>(text))
-                .catch(()=>{
+                .then((res) => {
+                    console.log(`[TRANSCRIPT] Fetch response status: ${res.status}`);
+                    return res.text();
+                })
+                .then((text) => {
+                    console.log(`[TRANSCRIPT] Raw transcript length: ${text.length}`);
+                    const parsed = JSONL.parse<StreamTranscriptItem>(text);
+                    console.log(`[TRANSCRIPT] Parsed ${parsed.length} transcript items`);
+                    return parsed;
+                })
+                .catch((error)=>{
+                    console.error(`[TRANSCRIPT] Failed to fetch transcript:`, error);
                     throw new TRPCError({code: "BAD_REQUEST", message: "Failed to fetch transcript"});
                 }); 
         const speakerIds = [
@@ -236,6 +250,11 @@ export const meetingsRouter = createTRPCRouter({
 
 
      getOne : protectedProcedure.input(z.object({id: z.string()})).query(async({input,ctx})=>{
+        // Prevent static files from being treated as meeting IDs
+        if (input.id.includes('.') || /\.(svg|png|jpg|jpeg|gif|css|js|ico|woff|woff2|json)$/i.test(input.id)) {
+            throw new TRPCError({code: "BAD_REQUEST", message: "Invalid meeting ID format"});
+        }
+
         const [existingMeeting ]=await db
         .select({
             ...getTableColumns(meetings),
