@@ -67,10 +67,14 @@ export const premiumRouter = createTRPCRouter({
         .from(agents)
         .where(eq(agents.userId, ctx.auth.user.id));
 
+    // Check if user has active subscription
+    const isPremium = customer?.activeSubscriptions && customer.activeSubscriptions.length > 0;
+
     // always return numbers, even if 0
     return {
         meetingCount: userMeetings?.count ?? 0,
         agentCount: userAgents?.count ?? 0,
+        isPremium: isPremium || false,
     };
         })
 });

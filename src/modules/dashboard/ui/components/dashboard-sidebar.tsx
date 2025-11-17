@@ -50,7 +50,7 @@ import { DashboardTrial } from "./dashboard-trial"
         <Sidebar>
             <SidebarHeader className="text-sidebar-accent-foreground">
                 <Link href="/" className="flex items-center gap-2 px-2 pt-2">
-                    <Image src="./logo.svg" height={36} width={36} alt="PersonaAI"/>
+                    <Image src="/logo.svg" height={36} width={36} alt="PersonaAI"/>
                     <p className="text-2xl font-semibold">PersonaAI</p>
                 </Link>
 

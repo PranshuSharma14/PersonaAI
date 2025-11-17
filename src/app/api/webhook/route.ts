@@ -11,6 +11,8 @@ import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources/index.mjs";
 import { generateAvatarUri } from "@/lib/avatar";
 import { streamChat } from "@/lib/stream-chat";
+import JSONL from "jsonl-parse-stringify";
+import { StreamTranscriptItem } from "@/modules/meetings/types";
 
 const openaiClient = new OpenAI({
     apiKey : process.env.OPENAI_API_KEY,
@@ -49,6 +51,8 @@ export async function POST (req : NextRequest) {
     }
 
     const eventType=(payload as Record<string, unknown>)?.type;
+
+    console.log(`🔔 Webhook received: ${eventType}`);
 
     if(eventType==="call.session_started") {
         const event= payload as CallSessionStartedEvent;
@@ -106,6 +110,7 @@ export async function POST (req : NextRequest) {
         })
 
     }
+    
     else if(eventType === "call.session_participant_left"){
         const event= payload as CallSessionParticipantLeftEvent;
         const meetingId = event.call_cid.split(":")[1];
@@ -118,6 +123,7 @@ export async function POST (req : NextRequest) {
         await call.end();
     }
     else if(eventType === "call.session_ended"){
+        console.log(`📞 Call ended, setting to processing`);
         const event = payload as CallEndedEvent;
         const meetingId=event.call.custom?.meetingId;
 
@@ -134,6 +140,7 @@ export async function POST (req : NextRequest) {
             .where(and(eq(meetings.id,meetingId) , eq(meetings.status , "active")));
     }
     else if(eventType === "call.transcription_ready"){
+        console.log(`📝 Transcription ready, processing directly`);
         const event= payload as CallTranscriptionReadyEvent;
         const meetingId = event.call_cid.split(":")[1];
 
@@ -150,26 +157,156 @@ export async function POST (req : NextRequest) {
             return NextResponse.json({error:"Meeting not found"},{status:400});
         }
 
-        await inngest.send({
-            name : "meetings/processing",
-            data : {
-                meetingId : updatedMeeting.id,
-                transcriptURL : updatedMeeting.transcriptURL,
+        console.log(`📝 Transcript saved, generating AI summary for meeting ${meetingId}`);
+        
+        // Generate AI summary directly from transcript
+        let aiSummary = "Meeting completed successfully. Transcript is available for review.";
+        
+        try {
+            console.log(`📝 Fetching transcript from: ${event.call_transcription.url}`);
+            // Fetch and parse transcript for AI summary
+            const transcriptResponse = await fetch(event.call_transcription.url);
+            if (!transcriptResponse.ok) {
+                throw new Error(`Failed to fetch transcript: ${transcriptResponse.status} ${transcriptResponse.statusText}`);
             }
-        })
+            
+            const transcriptText = await transcriptResponse.text();
+            console.log(`📝 Transcript text length: ${transcriptText.length}`);
+            
+            const transcript = JSONL.parse<StreamTranscriptItem>(transcriptText);
+            console.log(`📝 Parsed ${transcript.length} transcript items`);
+            
+            if (transcript.length === 0) {
+                console.log(`📝 No transcript items found, using fallback summary`);
+                throw new Error("No transcript content available");
+            }
+            
+            // Convert transcript to readable text
+            const conversationText = transcript
+                .map(item => `Speaker ${item.speaker_id}: ${item.text}`)
+                .join('\n');
+            
+            console.log(`📝 Conversation text length: ${conversationText.length}`);
+            console.log(`📝 Sample conversation text:`, conversationText.substring(0, 200) + "...");
+            console.log(`📝 Generating AI summary for ${transcript.length} transcript items`);
+            
+            // Test OpenAI connection first
+            console.log(`📝 Testing OpenAI API connection...`);
+            
+            // Generate summary using OpenAI
+            const summaryResponse = await openaiClient.chat.completions.create({
+                model: "gpt-5-nano", // Back to your working model
+                messages: [
+                    {
+                        role: "system", 
+                        content: `You are an expert meeting analyst. Create a professional, concise summary focusing on the most critical information from the meeting transcript.
+
+Format your response using this structure:
+
+## Meeting Summary
+
+### Main Topics Discussed
+• [List each primary topic covered in the meeting]
+• [Focus on substantive discussion points]
+• [Include context for each major subject]
+
+### Important Decisions Made
+• [Document all key decisions reached]
+• [Include rationale where discussed]
+• [Note any unanimous vs contested decisions]
+
+### Significant Insights & Discussions
+• [Highlight breakthrough moments or key realizations]
+• [Document important perspectives shared]
+• [Include notable expert opinions or analysis]
+
+### Action Items & Next Steps
+• [List specific tasks and responsibilities]
+• [Include deadlines and ownership where mentioned]
+• [Note follow-up meetings or milestones]
+
+Requirements:
+- Use bullet points exclusively for clarity
+- Maintain professional, business-focused tone
+- Be concise but comprehensive
+- Prioritize actionable information
+- Focus on decisions, insights, and outcomes rather than casual conversation`
+                    },
+                    {
+                        role: "user",
+                        content: `Please summarize this meeting transcript:\n\n${conversationText}`
+                    }
+                ],
+                max_completion_tokens: 5000
+            });
+            
+            console.log(`📝 OpenAI API response received`);
+            console.log(`📝 Response choices length:`, summaryResponse.choices.length);
+            
+            const generatedSummary = summaryResponse.choices[0]?.message?.content;
+            if (generatedSummary) {
+                aiSummary = generatedSummary;
+                console.log(`📝 AI summary generated successfully for meeting ${meetingId}, length: ${generatedSummary.length}`);
+                console.log(`📝 Summary preview:`, generatedSummary.substring(0, 150) + "...");
+            } else {
+                console.log(`📝 No content in AI response, using fallback`);
+                console.log(`📝 Full response:`, JSON.stringify(summaryResponse, null, 2));
+            }
+        } catch (error) {
+            console.error(`📝 Failed to generate AI summary for meeting ${meetingId}:`, error);
+            console.error(`📝 Error details:`, error instanceof Error ? error.message : String(error));
+            console.error(`📝 Error stack:`, error instanceof Error ? error.stack : 'No stack trace');
+        }
+        
+        // Complete the meeting with AI summary
+        await db
+            .update(meetings)
+            .set({
+                summary: aiSummary,
+                status: "completed",
+            })
+            .where(eq(meetings.id, updatedMeeting.id));
+            
+        console.log(`✅ Meeting ${meetingId} completed successfully`);
+        return NextResponse.json({ status: "meeting completed directly" });
     }
 
+    else if (eventType === "call.summary_ready") {
+    const event = payload as any;
+    const meetingId = event.call_cid.split(":")[1];
+
+    const summaryText = event.call_summary?.summary_text;
+
+    if (!summaryText) {
+        return NextResponse.json({ error: "Missing summary" }, { status: 400 });
+    }
+
+    await db
+        .update(meetings)
+        .set({
+            summary: summaryText,
+            status: "completed",
+        })
+        .where(eq(meetings.id, meetingId));
+
+    return NextResponse.json({ status: "meeting completed" });
+}
+
+
     else if(eventType === "call.recording_ready"){
+        console.log(`🎥 Recording ready, saving URL`);
         const event= payload as CallRecordingReadyEvent;
         const meetingId = event.call_cid.split(":")[1];
+        console.log(`🎥 Recording URL: ${event.call_recording.url}`);
 
         await db
             .update(meetings)
             .set({
-                transcriptURL:event.call_recording.url,
+                recordingURL:event.call_recording.url,
             })
-
-            .where(eq(meetings.id, meetingId))
+            .where(eq(meetings.id, meetingId));
+            
+        console.log(`🎥 Recording URL saved for meeting ${meetingId}`);
     }
 
     else if(eventType === "message.new"){
@@ -177,10 +314,13 @@ export async function POST (req : NextRequest) {
         const userId=event.user?.id;
         const channelId=event.channel_id;
         const text=event.message?.text;
+        const messageId=event.message?.id;
 
-        if(!userId || !channelId || !text){
+        if(!userId || !channelId || !text || !messageId){
             return NextResponse.json({error:"Missing data in message.new event"},{status:400});
         }
+
+        console.log(`💬 New message from user ${userId} in channel ${channelId}: ${text.substring(0, 50)}...`);
 
         const [existingMeeting]= await db
             .select()
@@ -188,6 +328,7 @@ export async function POST (req : NextRequest) {
             .where(and(eq(meetings.id,channelId),eq(meetings.status,"completed")));
 
         if(!existingMeeting){
+            console.log(`❌ Meeting ${channelId} not found or not completed`);
             return NextResponse.json({error:"Meeting not found"},{status:404});
         }
 
@@ -197,11 +338,19 @@ export async function POST (req : NextRequest) {
             .where(eq(agents.id,existingMeeting.agentId));
 
         if(!existingAgent){
+            console.log(`❌ Agent ${existingMeeting.agentId} not found`);
             return NextResponse.json({error:"Agent not found"},{status:404});
         }
 
-        if(userId != existingAgent.id){
-            const instructions = `
+        // CRITICAL: Only respond to user messages, not agent messages
+        if(userId === existingAgent.id){
+            console.log(`🤖 Ignoring message from agent itself (${existingAgent.id})`);
+            return NextResponse.json({status:"ignored - agent message"});
+        }
+
+        console.log(`🎯 Processing user message for agent ${existingAgent.name}`);
+
+        const instructions = `
       You are an AI assistant helping the user revisit a recently completed meeting.
       Below is a summary of the meeting, generated from the transcript:
       
@@ -225,7 +374,7 @@ export async function POST (req : NextRequest) {
         await channel.watch();
         const previousMessages = channel.state.messages
         .slice(-10)
-        .filter((msg) => msg.text && msg.text.trim() !== "")
+        .filter((msg) => msg.text && msg.text.trim() !== "" && msg.id !== messageId) // Exclude current message
         .map(
             (msg): ChatCompletionMessageParam => ({
             role: msg.user?.id === existingAgent.id ? "assistant" : "user",
@@ -233,13 +382,15 @@ export async function POST (req : NextRequest) {
             })
         );
 
+        console.log(`🧠 Generating AI response with ${previousMessages.length} previous messages`);
+
         const GPTResponse = await openaiClient.chat.completions.create({
             messages: [
                 {role : "system", content: instructions},
                 ...previousMessages,
                 {role : "user", content: text},
             ],
-            model : "gpt-4o",
+            model : "gpt-5-nano",
         });
         const GPTResponseText=GPTResponse.choices[0].message.content;
         if(!GPTResponseText){
@@ -251,13 +402,13 @@ export async function POST (req : NextRequest) {
             variant:"botttsNeutral",
         });
 
-        streamChat.upsertUser({
+        await streamChat.upsertUser({
             id: existingAgent.id,
             name: existingAgent.name,
             image: avatarUrl,
-        })
+        });
 
-        channel.sendMessage({
+        await channel.sendMessage({
             text: GPTResponseText,
             user: {
                 id: existingAgent.id,
@@ -265,7 +416,8 @@ export async function POST (req : NextRequest) {
                 image: avatarUrl,
             }
         }); 
-    }
+
+        console.log(`✅ AI response sent successfully`);
     }
 
     return NextResponse.json({status:"ok"});
