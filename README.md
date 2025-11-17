@@ -58,7 +58,6 @@ PersonaAI is a cutting-edge platform that enables users to build, customize, and
 - **Inngest** for async job processing
 - **Webhook Handlers** for Stream.io event processing
 
-## 🛠️ Installation & Setup
 
 ### Prerequisites
 - Node.js 18+ and npm/yarn/pnpm
@@ -66,32 +65,6 @@ PersonaAI is a cutting-edge platform that enables users to build, customize, and
 - OpenAI API key
 - Stream.io account and API keys
 - Polar account for payments (optional)
-
-### Environment Variables
-Create a `.env.local` file with the following:
-
-```env
-# Database
-DATABASE_URL="postgresql://..."
-
-# OpenAI
-OPENAI_API_KEY="sk-..."
-
-# Stream.io
-NEXT_PUBLIC_STREAM_KEY="your_stream_key"
-STREAM_SECRET="your_stream_secret"
-
-# Authentication
-AUTH_SECRET="your_auth_secret"
-NEXT_PUBLIC_APP_URL="http://localhost:3000"
-
-# Polar (for payments)
-POLAR_ACCESS_TOKEN="your_polar_token"
-
-# Inngest
-INNGEST_EVENT_KEY="your_inngest_key"
-INNGEST_SIGNING_KEY="your_signing_key"
-```
 
 ### Getting Started
 
@@ -159,22 +132,14 @@ personaAI/
 4. **Deploy**: Make agent available for video meetings
 
 ### Meeting Flow
-1. **Schedule/Start**: Create instant or scheduled meetings with agents
-2. **Video Call**: Real-time video conversation powered by Stream.io
-3. **AI Processing**: Live transcription and context understanding
-4. **Auto Summary**: AI-generated summary with key points and action items
+1. **Video Call**: Real-time video conversation powered by Stream.io
+2. **AI Processing**: Live transcription and context understanding
+3. **Auto Summary**: AI-generated summary with key points and action items
 
 ### Premium Subscription
 - **Tiered Access**: Free users get limited agents, premium users get unlimited
 - **Advanced Features**: Enhanced AI capabilities and priority processing
 - **Analytics Dashboard**: Detailed insights into usage patterns
-
-## 🙏 Acknowledgments
-
-- **OpenAI** for providing the GPT models that power our AI agents
-- **Stream.io** for the excellent video call infrastructure
-- **Vercel** for the deployment platform
-- **The Next.js team** for the amazing framework
 
 ## 📧 Contact
 
