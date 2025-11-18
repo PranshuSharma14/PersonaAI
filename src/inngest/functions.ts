@@ -108,18 +108,22 @@ export const meetingsProcessing = inngest.createFunction(
 
     const extractSummary = (res: unknown): string | null => {
       if (!res) return null;
-      const candidate = res.output ?? res;
+      
+      // Type guard to check if res is an object
+      if (typeof res !== 'object') return null;
+      
+      const candidate = (res as any).output ?? res;
       
       if (Array.isArray(candidate) && candidate.length > 0) {
         const first = candidate[0];
         if (typeof first === "string") return first;
-        if (first?.content) return first.content;
-        if (first?.text) return first.text;
+        if (first && typeof first === 'object' && 'content' in first) return String(first.content);
+        if (first && typeof first === 'object' && 'text' in first) return String(first.text);
       }
       
       if (typeof candidate === "string") return candidate;
-      if (candidate?.content) return candidate.content;
-      if (candidate?.text) return candidate.text;
+      if (candidate && typeof candidate === 'object' && 'content' in candidate) return String((candidate as any).content);
+      if (candidate && typeof candidate === 'object' && 'text' in candidate) return String((candidate as any).text);
       
       return null;
     };
