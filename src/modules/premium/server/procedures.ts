@@ -11,21 +11,25 @@ import { polarClient } from "@/lib/polar";
 export const premiumRouter = createTRPCRouter({
 
     getCurrentSubscription : protectedProcedure.query(async({ctx})=>{
-        const customer = await polarClient.customers.getStateExternal({
-            externalId:ctx.auth.user.id,
-        });
+        try {
+            const subscriptions = await polarClient.subscriptions.list({
+                customerId: ctx.auth.user.id,
+            });
 
-        const subscription= customer?.activeSubscriptions?.[0] || null;
+            const activeSubscription = subscriptions.result.items.find(sub => sub.status === 'active');
 
-        if(!subscription){
+            if(!activeSubscription){
+                return null;
+            } 
+
+            const product = await polarClient.products.get({
+                id : activeSubscription.productId,
+            });
+
+            return product;
+        } catch (error) {
             return null;
-        } 
-
-        const product = await polarClient.products.get({
-            id : subscription.productId,
-        });
-
-        return product;
+        }
     }),
 
     getProducts : protectedProcedure.query(async()=>{
@@ -46,8 +50,8 @@ export const premiumRouter = createTRPCRouter({
         customer = await polarClient.customers.getStateExternal({
         externalId: ctx.auth.user.id,
         });
-    } catch (error: any) {
-        if (error?.error === "ResourceNotFound") {
+    } catch (error: unknown) {
+        if (error && typeof error === 'object' && 'error' in error && error.error === "ResourceNotFound") {
         customer = await polarClient.customers.create({
             externalId: ctx.auth.user.id,
             email: ctx.auth.user.email,
@@ -68,7 +72,15 @@ export const premiumRouter = createTRPCRouter({
         .where(eq(agents.userId, ctx.auth.user.id));
 
     // Check if user has active subscription
-    const isPremium = customer?.activeSubscriptions && customer.activeSubscriptions.length > 0;
+    let isPremium = false;
+    try {
+        const subscriptions = await polarClient.subscriptions.list({
+            customerId: customer.id,
+        });
+        isPremium = subscriptions.result.items.some(sub => sub.status === 'active');
+    } catch (error) {
+        isPremium = false;
+    }
 
     // always return numbers, even if 0
     return {

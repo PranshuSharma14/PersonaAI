@@ -14,6 +14,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import {FaGithub, FaGoogle} from "react-icons/fa"
+import Image from "next/image";
 
 const formSchema = z.object({
     name: z.string().min(1,{message:"Name is required"}),
@@ -95,7 +96,7 @@ export const SignUpView = ()=>{
                         <div className="flex flex-col gap-6 ">
                             <div className="flex flex-col items-center text-center">
                                 <h1 className="text-2xl font-bold">
-                                    Let's get started
+                                    Let&apos;s get started
                                 </h1>
                                 <p className="text-muted-foreground text-balance">
                                     Create your account
@@ -214,7 +215,7 @@ export const SignUpView = ()=>{
                 </Form>
                 
                 <div className="bg-radial from-sidebar-accent to-sidebar relative hidden md:flex flex-col gap-y-4 items-center justify-center">
-                    <img src="/logo.svg" alt="logo" className="h-[92px] w-[92px]" />
+                    <Image src="/logo.svg" alt="logo" width={92} height={92} className="h-[92px] w-[92px]" />
                     <p className="text-2xl font-semibold text-white"> PersonaAI</p>
                 </div>
             </CardContent>
