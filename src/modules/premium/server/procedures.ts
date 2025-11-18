@@ -27,7 +27,7 @@ export const premiumRouter = createTRPCRouter({
             });
 
             return product;
-        } catch (error) {
+        } catch {
             return null;
         }
     }),
@@ -78,7 +78,7 @@ export const premiumRouter = createTRPCRouter({
             customerId: customer.id,
         });
         isPremium = subscriptions.result.items.some(sub => sub.status === 'active');
-    } catch (error) {
+    } catch {
         isPremium = false;
     }
 

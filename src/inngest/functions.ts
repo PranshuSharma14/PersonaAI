@@ -112,18 +112,31 @@ export const meetingsProcessing = inngest.createFunction(
       // Type guard to check if res is an object
       if (typeof res !== 'object') return null;
       
-      const candidate = (res as any).output ?? res;
+      const resObj = res as Record<string, unknown>;
+      const candidate = resObj.output ?? res;
       
       if (Array.isArray(candidate) && candidate.length > 0) {
         const first = candidate[0];
         if (typeof first === "string") return first;
-        if (first && typeof first === 'object' && 'content' in first) return String(first.content);
-        if (first && typeof first === 'object' && 'text' in first) return String(first.text);
+        if (first && typeof first === 'object' && 'content' in first) {
+          const firstObj = first as Record<string, unknown>;
+          return String(firstObj.content);
+        }
+        if (first && typeof first === 'object' && 'text' in first) {
+          const firstObj = first as Record<string, unknown>;
+          return String(firstObj.text);
+        }
       }
       
       if (typeof candidate === "string") return candidate;
-      if (candidate && typeof candidate === 'object' && 'content' in candidate) return String((candidate as any).content);
-      if (candidate && typeof candidate === 'object' && 'text' in candidate) return String((candidate as any).text);
+      if (candidate && typeof candidate === 'object' && 'content' in candidate) {
+        const candidateObj = candidate as Record<string, unknown>;
+        return String(candidateObj.content);
+      }
+      if (candidate && typeof candidate === 'object' && 'text' in candidate) {
+        const candidateObj = candidate as Record<string, unknown>;
+        return String(candidateObj.text);
+      }
       
       return null;
     };

@@ -1,6 +1,5 @@
 import { db } from "@/db";
 import { agents, meetings } from "@/db/schema";
-import { inngest } from "@/inngest/client";
 
 import { streamVideo } from "@/lib/stream-video";
 import { CallEndedEvent, CallSessionParticipantLeftEvent, CallSessionStartedEvent, CallTranscriptionReadyEvent , MessageNewEvent } from "@stream-io/node-sdk";
@@ -272,7 +271,7 @@ Requirements:
     }
 
     else if (eventType === "call.summary_ready") {
-    const event = payload as any;
+    const event = payload as { call_cid: string; call_summary?: { summary_text?: string } };
     const meetingId = event.call_cid.split(":")[1];
 
     const summaryText = event.call_summary?.summary_text;
