@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { ArrowRightIcon, BotIcon, MessageSquareIcon, SparklesIcon, VideoIcon, ZapIcon, CheckIcon, UsersIcon, TrendingUpIcon } from "lucide-react";
 import Link from "next/link";
-import { GeneratedAvatar } from "@/components/generated-avatar";
 
 export const HomeView = () => {
   

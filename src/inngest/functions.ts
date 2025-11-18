@@ -3,7 +3,7 @@ import { agents, meetings, user } from "@/db/schema";
 import { inngest } from "@/inngest/client";
 import { StreamTranscriptItem } from "@/modules/meetings/types";
 import { eq, inArray } from "drizzle-orm";
-import {createAgent, openai, TextMessage} from "@inngest/agent-kit";
+import {createAgent, openai} from "@inngest/agent-kit";
 import JSONL from "jsonl-parse-stringify";
 
 const summarizer = createAgent({
@@ -106,7 +106,7 @@ export const meetingsProcessing = inngest.createFunction(
       );
     });
 
-    const extractSummary = (res: any): string | null => {
+    const extractSummary = (res: unknown): string | null => {
       if (!res) return null;
       const candidate = res.output ?? res;
       
