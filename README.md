@@ -79,25 +79,61 @@ cd PersonaAI
 npm install
 ```
 
+**3. Enviornment variable dependencies**
 
-3. **Set up the database**
+```
+# Database
+DATABASE_URL="postgresql://<DB_USER>:<DB_PASSWORD>@<DB_HOST>/<DB_NAME>?sslmode=require"
+
+# Better Auth
+BETTER_AUTH_SECRET="your_better_auth_secret"
+BETTER_AUTH_URL="http://localhost:3000"
+
+# OAuth Providers
+GITHUB_CLIENT_ID="your_github_client_id"
+GITHUB_CLIENT_SECRET="your_github_client_secret"
+
+GOOGLE_CLIENT_ID="your_google_client_id"
+GOOGLE_CLIENT_SECRET="your_google_client_secret"
+
+# App URL
+NEXT_PUBLIC_APP_URL="http://localhost:3000"
+
+# Stream (Video & Chat)
+NEXT_PUBLIC_STREAM_VIDEO_API_KEY="your_stream_video_api_key"
+STREAM_VIDEO_SECRET_KEY="your_stream_video_secret_key"
+
+NEXT_PUBLIC_STREAM_CHAT_API_KEY="your_stream_chat_api_key"
+STREAM_CHAT_SECRET_KEY="your_stream_chat_secret_key"
+
+# OpenAI
+OPENAI_API_KEY="your_openai_api_key"
+
+# Polar (Payments / Billing)
+POLAR_ACCESS_TOKEN="your_polar_access_token"
+
+# Inngest (Background jobs / Webhooks)
+INNGEST_API_KEY="your_inngest_api_key"
+```
+
+4. **Set up the database**
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
 
-4. **Start the application**
+5. **Start the application**
 ```bash
 npm run dev
 ```
-5. **Start the webhook listener (in a new terminal)**
+6. **Start the webhook listener (in a new terminal)**
 
 Open another terminal in the same project directory and run:
 ```bash
 npm run dev:webhook
 ```
 
-6. **Open the application**
+7. **Open the application**
 Visit [http://localhost:3000](http://localhost:3000) to see PersonaAI in action.
 
 ## 📁 Project Structure
