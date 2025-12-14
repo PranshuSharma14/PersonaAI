@@ -120,6 +120,8 @@ INNGEST_API_KEY="your_inngest_api_key"
 ```bash
 npm run db:generate
 npm run db:migrate
+npm run db:studio
+npm run db:push
 ```
 
 5. **Start the application**
