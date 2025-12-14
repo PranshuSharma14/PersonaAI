@@ -93,8 +93,9 @@ npm run dev
 5. **Start the webhook listener (in a new terminal)**
 
 Open another terminal in the same project directory and run:
-
+```bash
 npm run dev:webhook
+```
 
 6. **Open the application**
 Visit [http://localhost:3000](http://localhost:3000) to see PersonaAI in action.
