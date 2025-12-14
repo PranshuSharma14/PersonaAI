@@ -79,6 +79,7 @@ cd PersonaAI
 npm install
 ```
 
+
 3. **Set up the database**
 ```bash
 npm run db:generate
@@ -89,8 +90,13 @@ npm run db:migrate
 ```bash
 npm run dev
 ```
+5. **Start the webhook listener (in a new terminal)**
 
-5. **Open the application**
+Open another terminal in the same project directory and run:
+
+npm run dev:webhook
+
+6. **Open the application**
 Visit [http://localhost:3000](http://localhost:3000) to see PersonaAI in action.
 
 ## 📁 Project Structure
