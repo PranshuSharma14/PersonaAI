@@ -61,33 +61,31 @@ export async function POST (req : NextRequest) {
             return NextResponse.json({error:"Missing meetingId"}, {status:400});
         }
 
+        // First, try to atomically update the meeting status from 'upcoming' to 'active'
+        // This prevents duplicate processing if webhook is called multiple times
         const [existingMeeting]= await db
-            .select()
-            .from(meetings)
+            .update(meetings)
+            .set({
+                status:"active",
+                startedAt: new Date(),
+            })
             .where(
                 and(
                     eq(meetings.id,meetingId),
-                    not(eq(meetings.status,"completed")),
-                    not(eq(meetings.status,"active")),
-                    not(eq(meetings.status,"cancelled")),
-                    not(eq(meetings.status,"processing")),
+                    eq(meetings.status,"upcoming"), // Only update if status is 'upcoming'
                 )
-            );
+            )
+            .returning();
+        
         if(!existingMeeting){
-            return NextResponse.json({error:"Meeting not found"},{status:404});
+            // Meeting was already processed or doesn't exist
+            console.log(`⚠️ Meeting ${meetingId} already active or not found - skipping agent connection`);
+            return NextResponse.json({status:"meeting already processed"});
         }
 
+        console.log(`🚀 Starting meeting ${meetingId} - connecting agent`);
 
-        await db
-         .update(meetings)
-         .set({
-            status:"active",
-            startedAt: new Date(),
-         })
-         .where(eq(meetings.id,existingMeeting.id));
-
-        
-         const [existingAgent] = await db
+        const [existingAgent] = await db
             .select()
             .from(agents)
             .where(eq(agents.id,existingMeeting.agentId));
@@ -105,8 +103,20 @@ export async function POST (req : NextRequest) {
 
         realtimeClient.updateSession({
             instructions:existingAgent.instructions,
-
+            voice: "alloy", // Set a voice for the agent
+            modalities: ["text", "audio"], // Enable both text and audio
+            turn_detection: { 
+                type: "server_vad", // Voice Activity Detection
+                threshold: 0.5,
+                prefix_padding_ms: 300,
+                silence_duration_ms: 500,
+            },
+            input_audio_transcription: {
+                model: "whisper-1"
+            }
         })
+
+        console.log(`✅ Agent ${existingAgent.name} connected to meeting ${meetingId} with voice enabled`);
 
     }
     
