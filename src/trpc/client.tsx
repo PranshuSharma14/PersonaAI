@@ -46,7 +46,7 @@ export function TRPCReactProvider(
           // Add error handling for fetch
           fetch: async (input, init) => {
             try {
-              const response = await fetch(input, init);
+              const response = await fetch(input, init as RequestInit);
               if (!response.ok) {
                 console.error(`tRPC request failed: ${response.status} ${response.statusText}`);
               }
