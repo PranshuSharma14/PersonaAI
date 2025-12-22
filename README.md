@@ -46,7 +46,7 @@ PersonaAI is a cutting-edge platform that enables users to build, customize, and
 - **tRPC** for end-to-end type safety between client and server
 
 ### **AI & Real-time**
-- **OpenAI GPT-5-nano** for intelligent conversations
+- **OpenAI GPT-5-mini** for intelligent conversations
 - **Stream.io** for video calls and real-time chat
 - **Webhook Processing** for seamless meeting state management
 
